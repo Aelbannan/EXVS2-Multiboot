@@ -5,6 +5,7 @@
 #include <ws2tcpip.h>
 #include <Windows.h>
 #include "DLLMain.h"
+#include "LocalizedTextLog.h"
 #include "MinHook.h"
 #include <thread>
 
@@ -20,6 +21,7 @@ BIND_PROC pOriginalBind = NULL;
 SENDTO_PROC pOriginalSendto = NULL;
 RECVFROM_PROC pOriginalRecvfrom = nullptr;
 
+bool g_socketKillerEnabled = false;
 bool g_killerThreadStarted = false;
 SOCKET g_broadcastSocket = INVALID_SOCKET;
 
@@ -127,13 +129,16 @@ void LoadConfig() {
     DebugPrint("Loading %s\n", iniPath);
 
     g_sharedPort = GetPrivateProfileIntA("General", "SharedPort", -1, iniPath);
-    g_instanceNumber =GetPrivateProfileIntA("General", "InstanceNumber", -1, iniPath);
+    g_instanceNumber = GetPrivateProfileIntA("General", "InstanceNumber", -1, iniPath);
     g_cardServerPort = GetPrivateProfileIntA("General", "CardServerPort", -1, iniPath);
+    g_socketKillerEnabled = GetPrivateProfileIntA("General", "SocketKillerEnable", 0, iniPath) != 0;
 }
 
 
 VOID Initialise(PVOID lpParameter)
 {
+    LocalizedTextLogStartup();
+
     LoadConfig();
 
     if (g_sharedPort == -1 || g_instanceNumber == -1 || g_cardServerPort == -1) {
@@ -145,10 +150,15 @@ VOID Initialise(PVOID lpParameter)
         return;
     }
 
-    // Create hooks for the target APIs in ws2_32.dll
-    MH_CreateHookApi(L"ws2_32.dll", "bind", DetourBind, reinterpret_cast<LPVOID*>(&pOriginalBind));
-    MH_CreateHookApi(L"ws2_32.dll", "sendto", DetourSendto, reinterpret_cast<LPVOID*>(&pOriginalSendto));
+    if (g_socketKillerEnabled) {
+        MH_CreateHookApi(L"ws2_32.dll", "bind", DetourBind, reinterpret_cast<LPVOID*>(&pOriginalBind));
+        MH_CreateHookApi(L"ws2_32.dll", "sendto", DetourSendto, reinterpret_cast<LPVOID*>(&pOriginalSendto));
+        DebugPrint("[EXVS2] Socket killer enabled\n");
+    } else {
+        DebugPrint("[EXVS2] Socket killer disabled\n");
+    }
 
+    InstallLocalizedTextHooks();
 
     // Enable all created hooks
     MH_EnableHook(MH_ALL_HOOKS);
@@ -170,6 +180,7 @@ BOOL WINAPI DllMain(HMODULE hModule,
         }
         case DLL_PROCESS_DETACH:
         {
+            ShutdownLocalizedTextLog();
             break;
         }
     }

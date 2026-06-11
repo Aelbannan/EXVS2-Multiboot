@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Release_Debug|Win32">
@@ -196,6 +196,7 @@
     <ClCompile Include="..\minhook-master\src\hook.c" />
     <ClCompile Include="..\minhook-master\src\trampoline.c" />
     <ClCompile Include="DLLMain.cpp" />
+    <ClCompile Include="LocalizedTextLog.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -206,6 +207,7 @@
     <ClInclude Include="..\minhook-master\src\trampoline.h" />
     <ClInclude Include="CommonCRT.h" />
     <ClInclude Include="DLLMain.h" />
+    <ClInclude Include="LocalizedTextLog.h" />
     <ClInclude Include="exports.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
